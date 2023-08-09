@@ -22,11 +22,11 @@ public class JWTAuthorizationFilter extends OncePerRequestFilter {
         String authorizationHeader = request.getHeader("Authorization");
         if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
             String jwtToken = authorizationHeader.substring(7);
-            AuthorizationClient.Result result = client.verify(jwtToken);
-            if (result.authorized()) {
+            AuthorizationClient.Session session = client.verify(jwtToken);
+            if (session.authorized()) {
                 try {
-                    UserDetails userDetails = result.fetchUserDetails();
-                    KetchupAuthenticationToken authenticationToken = new KetchupAuthenticationToken(result, userDetails);
+                    UserDetails userDetails = session.fetchUserDetails();
+                    KetchupAuthenticationToken authenticationToken = new KetchupAuthenticationToken(session, userDetails);
                     SecurityContextHolder.getContext().setAuthentication(authenticationToken);
                 } catch (AuthorizationClient.UnauthorizedException ignored) {
                 }

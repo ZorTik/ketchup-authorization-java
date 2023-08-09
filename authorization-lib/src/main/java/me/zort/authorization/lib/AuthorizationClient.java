@@ -42,11 +42,11 @@ public final class AuthorizationClient {
         httpProcessor.setBaseUrl(baseUrl);
     }
 
-    public @NotNull Result authorize() { // Administrator authorization
+    public @NotNull AuthorizationClient.Session authorize() { // Administrator authorization
         return authorize((JsonObject) null);
     }
 
-    public @NotNull Result authorize(@NotNull String username, @NotNull String password) {
+    public @NotNull AuthorizationClient.Session authorize(@NotNull String username, @NotNull String password) {
         Objects.requireNonNull(username, "Username cannot be null");
         Objects.requireNonNull(password, "Password cannot be null");
 
@@ -57,35 +57,35 @@ public final class AuthorizationClient {
         return authorize(principal);
     }
 
-    public @NotNull Result authorize(@Nullable JsonObject principal) {
-        return new Result(strategy, principal, strategy.authorize(processor, principal));
+    public @NotNull AuthorizationClient.Session authorize(@Nullable JsonObject principal) {
+        return new Session(strategy, principal, strategy.authorize(processor, principal));
     }
 
-    public @NotNull Result verify(@NotNull String token) {
+    public @NotNull AuthorizationClient.Session verify(@NotNull String token) {
         return verify(token, null);
     }
 
-    public @NotNull Result verify(@NotNull String token, @Nullable String refreshToken) {
+    public @NotNull AuthorizationClient.Session verify(@NotNull String token, @Nullable String refreshToken) {
         Objects.requireNonNull(token, "Token cannot be null");
 
         // Token wrapper without expiration that can't be refreshed
         AuthorizationStrategy.Token tokenInstance = new AuthorizationStrategy.Token(token, refreshToken, -1);
         if (strategy.verifyToken(processor, token)) {
-            return new Result(strategy, null, tokenInstance);
+            return new Session(strategy, null, tokenInstance);
         } else {
-            return new Result(strategy, null, null);
+            return new Session(strategy, null, null);
         }
     }
 
-    public final class Result {
+    public final class Session {
         private final AuthorizationStrategy strategy;
         private final JsonObject principal;
         @Getter
         private AuthorizationStrategy.Token token;
 
-        private Result(AuthorizationStrategy strategy,
-                       @Nullable JsonObject principal,
-                       @Nullable AuthorizationStrategy.Token token) {
+        private Session(AuthorizationStrategy strategy,
+                        @Nullable JsonObject principal,
+                        @Nullable AuthorizationStrategy.Token token) {
             this.strategy = strategy;
             this.principal = principal;
             this.token = token;

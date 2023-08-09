@@ -8,18 +8,18 @@ import java.security.Principal;
 
 public class KetchupAuthenticationToken extends AbstractAuthenticationToken {
 
-    private final AuthorizationClient.Result result;
+    private final AuthorizationClient.Session session;
     private final UserDetailsPrincipal principal;
 
-    public KetchupAuthenticationToken(AuthorizationClient.Result result, UserDetails details) {
+    public KetchupAuthenticationToken(AuthorizationClient.Session session, UserDetails details) {
         super(null);
-        this.result = result;
+        this.session = session;
         this.principal = new UserDetailsPrincipal(details);
     }
 
     @Override
     public Object getCredentials() {
-        return result.getToken().token();
+        return session.getToken().token();
     }
 
     @Override

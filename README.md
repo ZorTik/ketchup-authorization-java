@@ -9,14 +9,14 @@ This module contains plain authorization client to be used anywhere without spec
 AuthorizationClient client = new AuthorizationClient.Builder()
    .url("http://authorizationserverurl:1234")
    .processor(new OkHttpProcessor());
-AuthorizationClient.Result authorizationResult;
+AuthorizationClient.Session authorizationSession;
 
-authorizationResult = client.authorize(); // Authorize as trusted client
-authorizationResult = client.authorize("username", "password"); // Authorize with basic auth
-authorizationResult = client.authorize(principal); // Authorize with custom principal
-authorizationResult = client.verify("token"); // Verify token and inject token (This session can't be refreshed)
+authorizationSession = client.authorize(); // Authorize as trusted client
+authorizationSession = client.authorize("username", "password"); // Authorize with basic auth
+authorizationSession = client.authorize(principal); // Authorize with custom principal
+authorizationSession = client.verify("token"); // Verify token and inject token (This session can't be refreshed)
 
-boolean success = authorizationResult.authorized(); // Check if authorization was successful
+boolean success = authorizationSession.authorized(); // Check if authorization was successful
 UserDetails details = authorizationResult.fetchUserDetails(); // Fetch user details
 boolean nodeState = authorizationResult.fetchNodeState("any.permission.node"); // Fetch node (permission) state
 ```
