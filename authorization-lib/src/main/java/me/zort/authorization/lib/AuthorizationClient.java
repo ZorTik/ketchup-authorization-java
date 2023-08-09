@@ -31,6 +31,12 @@ public final class AuthorizationClient {
     @Setter
     private AuthorizationStrategy strategy = new AuthorizationStrategyV1();
 
+    /**
+     * Initializes a new authorization client with the specified base URL and HTTP processor.
+     *
+     * @param baseUrl Base URL of the authorization server
+     * @param httpProcessor HTTP processor to use
+     */
     public AuthorizationClient(
             @NotNull String baseUrl,
             @NotNull HttpProcessor httpProcessor
@@ -42,10 +48,24 @@ public final class AuthorizationClient {
         httpProcessor.setBaseUrl(baseUrl);
     }
 
+    /**
+     * Initializes new authorization session using administrator principal.
+     * To use this, current machine needs to be on the trusted IP addresses
+     * list. By default, all permissions are granted to the administrator.
+     *
+     * @return New authorization session
+     */
     public @NotNull AuthorizationClient.Session authorize() { // Administrator authorization
         return authorize((JsonObject) null);
     }
 
+    /**
+     * Initializes new authorization session using username-password credentials.
+     *
+     * @param username Username
+     * @param password Password
+     * @return New authorization session
+     */
     public @NotNull AuthorizationClient.Session authorize(@NotNull String username, @NotNull String password) {
         Objects.requireNonNull(username, "Username cannot be null");
         Objects.requireNonNull(password, "Password cannot be null");
@@ -57,14 +77,40 @@ public final class AuthorizationClient {
         return authorize(principal);
     }
 
+    /**
+     * Initializes new authorization session using custom principal.
+     *
+     * @param principal Principal to use
+     * @return New authorization session
+     */
     public @NotNull AuthorizationClient.Session authorize(@Nullable JsonObject principal) {
         return new Session(strategy, principal, strategy.authorize(processor, principal));
     }
 
+    /**
+     * Verifies the specified token and returns a session wrapper.
+     * If the token is not valid, session will be initialized without a token
+     * instance, so {@link Session#authorized()} will return false.
+     *
+     * @param token Token to verify
+     * @return New authorization session
+     */
     public @NotNull AuthorizationClient.Session verify(@NotNull String token) {
         return verify(token, null);
     }
 
+    /**
+     * Verifies the specified token and returns a session wrapper.
+     * If the token is not valid, session will be initialized without a token
+     * instance, so {@link Session#authorized()} will return false.
+     * <p>
+     * Optionally, a refreshToken can be specified, which will allow the session
+     * to be refreshed using {@link Session#refresh()}.
+     *
+     * @param token Token to verify
+     * @param refreshToken Refresh token to use
+     * @return New authorization session
+     */
     public @NotNull AuthorizationClient.Session verify(@NotNull String token, @Nullable String refreshToken) {
         Objects.requireNonNull(token, "Token cannot be null");
 
@@ -77,6 +123,10 @@ public final class AuthorizationClient {
         }
     }
 
+    /**
+     * Authorization session wrapper, authorized or non-authorized.
+     * Unauthorized session will return false in {@link Session#authorized()}.
+     */
     public final class Session {
         private final AuthorizationStrategy strategy;
         private final JsonObject principal;
@@ -99,7 +149,7 @@ public final class AuthorizationClient {
          */
         public void refresh() {
             boolean refreshed = false;
-            if (token.refreshToken() != null) {
+            if (token != null && token.refreshToken() != null) {
                 token = strategy.refresh(processor, token.refreshToken());
                 refreshed = true;
             }
@@ -114,10 +164,25 @@ public final class AuthorizationClient {
             token = strategy.authorize(processor, principal);
         }
 
+        /**
+         * Fetches the user details of the current session.
+         *
+         * @return User details
+         * @throws UnauthorizedException When the session is not authorized
+         */
         public @NotNull UserDetails fetchUserDetails() throws UnauthorizedException {
             return authorizedFetch(() -> strategy.fetchUserDetails(processor, token));
         }
 
+        /**
+         * Fetches the state of provided permission node.
+         * In other words, this method will return true if the user has the permission
+         * node, otherwise false.
+         *
+         * @param node Permission node to check
+         * @return True if the user has the permission node, otherwise false
+         * @throws UnauthorizedException When the session is not authorized
+         */
         public boolean fetchNodeState(String node) throws UnauthorizedException {
             return Boolean.TRUE.equals(authorizedFetch(() -> strategy.fetchNodeState(processor, token, node)));
         }
@@ -143,6 +208,11 @@ public final class AuthorizationClient {
             }
         }
 
+        /**
+         * Returns true if the session is authorized, otherwise false.
+         *
+         * @return Session authorization state
+         */
         public boolean authorized() {
             return token != null;
         }
