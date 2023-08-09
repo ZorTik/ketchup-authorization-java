@@ -11,12 +11,20 @@ AuthorizationClient client = new AuthorizationClient.Builder()
    .processor(new OkHttpProcessor());
 AuthorizationClient.Session authorizationSession;
 
-authorizationSession = client.authorize(); // Authorize as trusted client
-authorizationSession = client.authorize("username", "password"); // Authorize with basic auth
-authorizationSession = client.authorize(principal); // Authorize with custom principal
-authorizationSession = client.verify("token"); // Verify token and inject token (This session can't be refreshed)
+// Authorize as trusted client
+authorizationSession = client.authorize();
+// Authorize with basic auth
+authorizationSession = client.authorize("username", "password");
+// Authorize with custom principal
+authorizationSession = client.authorize(principal);
+// Verify token and inject token (This session can't be refreshed)
+authorizationSession = client.verify("token");
+// Verify token and inject token with refresh token (This session can be refreshed)
+authorizationSession = client.verify("token", "refreshToken");
 
 boolean success = authorizationSession.authorized(); // Check if authorization was successful
+// The session will try to automatically refresh itself using euther provided refresh token
+// or provided principal
 UserDetails details = authorizationResult.fetchUserDetails(); // Fetch user details
 boolean nodeState = authorizationResult.fetchNodeState("any.permission.node"); // Fetch node (permission) state
 ```
