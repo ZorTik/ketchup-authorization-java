@@ -54,7 +54,6 @@ public class ApiConfiguration extends WebSecurityConfigurerAdapter {
     
     @Override
     protected void configure(HttpSecurity http) throws Exception {
-        JWTAuthorizationFilter authorizationFilter = new JWTAuthorizationFilter(authorizationClient);
         http.csrf().disable()
                 // Set endpoints that don't require authorization
                 .authorizeRequests().antMatchers("/permittedEndpoint").permitAll()
@@ -66,7 +65,7 @@ public class ApiConfiguration extends WebSecurityConfigurerAdapter {
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and()
                 // Set the filter before authentication filter that rejects requests that
                 // don't have SecurityContextHolder.getContext().getAuthentication() present.
-                .addFilterBefore(authorizationFilter, CustomRejectUnauthorizedFilter.class);
+                .addFilterBefore(new JWTAuthorizationFilter(authorizationClient), CustomRejectUnauthorizedFilter.class);
     }
 }
 ```
