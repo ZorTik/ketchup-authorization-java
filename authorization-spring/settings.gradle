@@ -1,0 +1,3 @@
+rootProject.name = 'authorization-spring'
+include ":authorization-lib"
+project(":authorization-lib").projectDir = file("../authorization-lib")
