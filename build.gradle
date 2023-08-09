@@ -2,6 +2,8 @@ plugins {
     id 'java'
 }
 
+compileJava.options.encoding = 'UTF-8'
+
 group = 'me.zort'
 version = '1.0-SNAPSHOT'
 
@@ -10,5 +12,48 @@ repositories {
 }
 
 dependencies {
+    implementation project('authorization-lib')
+    implementation project('authorization-spring')
+}
 
+jar {
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+}
+
+subprojects {
+    apply plugin: 'java'
+    apply plugin: 'maven-publish'
+
+    compileJava.options.encoding = 'UTF-8'
+
+    publishing {
+        publications {
+            mavenJava(MavenPublication) {
+                groupId = 'com.github.rajce-pro'
+                artifactId = project.name
+                version = '1.0'
+
+                from components.java
+                pom {
+                    name = 'ketchup-authorization-java'
+                    description = 'Rajce.pro authorization client libraries (java)'
+                    licenses {
+                        license {
+                            name = 'MIT License'
+                            url = 'https://raw.githubusercontent.com/rajce-pro/ketchup-authorization-java/master/LICENSE'
+                        }
+                    }
+                    developers {
+                        developer {
+                            id = 'zort'
+                            name = 'ZorTik'
+                            email = 'zortlegit@gmail.com'
+                        }
+                    }
+                }
+            }
+        }
+    }
 }

@@ -29,11 +29,11 @@ public final class AuthorizationClient {
         httpProcessor.setBaseUrl(baseUrl);
     }
 
-    public Result authorize() { // Administrator authorization
+    public @NotNull Result authorize() { // Administrator authorization
         return authorize((JsonObject) null);
     }
 
-    public Result authorize(@NotNull String username, @NotNull String password) {
+    public @NotNull Result authorize(@NotNull String username, @NotNull String password) {
         Objects.requireNonNull(username, "Username cannot be null");
         Objects.requireNonNull(password, "Password cannot be null");
 
@@ -44,15 +44,19 @@ public final class AuthorizationClient {
         return authorize(principal);
     }
 
-    public Result authorize(@Nullable JsonObject principal) {
+    public @NotNull Result authorize(@Nullable JsonObject principal) {
         return new Result(strategy, principal, strategy.authorize(processor, principal));
     }
 
-    public Result verify(@NotNull String token) {
+    public @NotNull Result verify(@NotNull String token) {
+        return verify(token, null);
+    }
+
+    public @NotNull Result verify(@NotNull String token, @Nullable String refreshToken) {
         Objects.requireNonNull(token, "Token cannot be null");
 
         // Token wrapper without expiration that can't be refreshed
-        AuthorizationStrategy.Token tokenInstance = new AuthorizationStrategy.Token(token, -1);
+        AuthorizationStrategy.Token tokenInstance = new AuthorizationStrategy.Token(token, refreshToken, -1);
         if (strategy.verifyToken(processor, token)) {
             return new Result(strategy, null, tokenInstance);
         } else {
@@ -75,13 +79,23 @@ public final class AuthorizationClient {
         }
 
         public void refresh() {
+            boolean refreshed = false;
+            if (token.refreshToken() != null) {
+                token = strategy.refresh(processor, token.refreshToken());
+                refreshed = true;
+            }
+            if (token != null && refreshed) {
+                return;
+            }
             if (principal == null) {
+                // There is an option to not specify principal, in that case session was initialized
+                // using token only.
                 throw new RuntimeException("Cannot refresh, session was not initialized with principal");
             }
             token = strategy.authorize(processor, principal);
         }
 
-        public UserDetails fetchUserDetails() throws UnauthorizedException {
+        public @NotNull UserDetails fetchUserDetails() throws UnauthorizedException {
             return authorizedFetch(() -> strategy.fetchUserDetails(processor, token));
         }
 
@@ -89,15 +103,16 @@ public final class AuthorizationClient {
             return Boolean.TRUE.equals(authorizedFetch(() -> strategy.fetchNodeState(processor, token, node)));
         }
 
-        private <T> @Nullable T authorizedFetch(Supplier<@Nullable T> supplier) throws UnauthorizedException {
+        // There is no nullable result since all unexpected states result in an exception.
+        private <T> @NotNull T authorizedFetch(Supplier<@Nullable T> supplier) throws UnauthorizedException {
             if (!authorized()) {
                 throw new UnauthorizedException("Not authorized");
             }
             T tResult = supplier.get();
             if (tResult == null && System.currentTimeMillis() >= token.expiresAt()) {
-                if (principal == null) {
+                if (principal == null && token.refreshToken() == null) {
                     // Principal is null in only case when this result was initialized
-                    // with token only, so there is no was to refresh the session.
+                    // with token only, so there is no way to refresh the session.
                     throw new UnauthorizedException("Session expired, please obtain another token");
                 }
                 refresh();

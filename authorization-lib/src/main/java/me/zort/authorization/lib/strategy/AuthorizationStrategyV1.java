@@ -5,6 +5,7 @@ import com.google.gson.JsonObject;
 import me.zort.authorization.lib.AuthorizationStrategy;
 import me.zort.authorization.lib.HttpProcessor;
 import me.zort.authorization.lib.model.UserDetails;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
@@ -17,17 +18,23 @@ public class AuthorizationStrategyV1 implements AuthorizationStrategy {
     public @Nullable Token authorize(HttpProcessor processor, @Nullable JsonObject principal) {
         return makeCall(
                 processor, null, "/v1/auth/authenticate", "POST", principal,
-                response -> new Token(
-                        response.get("token").getAsString(),
-                        response.get("expiresAt").getAsLong()
-                ),
-                null
+                tokenMapper(), null
+        );
+    }
+
+    @Override
+    public @Nullable Token refresh(HttpProcessor processor, @NotNull String refreshToken) {
+        JsonObject body = new JsonObject();
+        body.addProperty("refreshToken", refreshToken);
+        return makeCall(
+                processor, null, "/v1/auth/refresh", "POST", body,
+                tokenMapper(), null
         );
     }
 
     @Override
     public @Nullable UserDetails fetchUserDetails(HttpProcessor processor, Token token) {
-        return fetchUserDetails(processor, token, true);
+        return doFetchUserDetails(processor, token, true);
     }
 
     @Override
@@ -43,10 +50,18 @@ public class AuthorizationStrategyV1 implements AuthorizationStrategy {
 
     @Override
     public boolean verifyToken(HttpProcessor processor, String token) {
-        return fetchUserDetails(processor, new Token(token, System.currentTimeMillis() + 60000), false) != null;
+        return doFetchUserDetails(processor, new Token(token, null, System.currentTimeMillis() + 60000), false) != null;
     }
 
-    private @Nullable UserDetails fetchUserDetails(HttpProcessor processor, Token token, boolean includePermissions) {
+    private @NotNull Function<JsonObject, Token> tokenMapper() {
+        return response -> new Token(
+                response.get("token").getAsString(),
+                response.get("refreshToken").getAsString(),
+                response.get("expiresAt").getAsLong()
+        );
+    }
+
+    private @Nullable UserDetails doFetchUserDetails(HttpProcessor processor, Token token, boolean includePermissions) {
         String path = "/v1/user/details" + (includePermissions ? "?includePermissions=true" : "");
         return makeCall(
                 processor, token, path, "GET", null,
