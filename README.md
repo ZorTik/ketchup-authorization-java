@@ -63,6 +63,8 @@ public class ApiConfiguration extends WebSecurityConfigurerAdapter {
     
     @Autowired
     private AuthorizationClient authorizationClient;
+    @Autowired
+    private CustomRejectUnauthorizedFilter rejectUnauthorizedFilter;
     
     @Override
     protected void configure(HttpSecurity http) throws Exception {
@@ -75,9 +77,40 @@ public class ApiConfiguration extends WebSecurityConfigurerAdapter {
                 // Setup other modules
                 .exceptionHandling().authenticationEntryPoint(exceptionHandlerEntryPoint).and()
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and()
+                .addFilterBefore(rejectUnauthorizedFilter, UsernamePasswordAuthenticationFilter.class)
                 // Set the filter before authentication filter that rejects requests that
                 // don't have SecurityContextHolder.getContext().getAuthentication() present.
                 .addFilterBefore(new JWTAuthorizationFilter(authorizationClient), CustomRejectUnauthorizedFilter.class);
+    }
+}
+
+@Component
+public class CustomRejectUnauthorizedFilter extends OncePerRequestFilter {
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    @Override
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+        if (SecurityContextHolder.getContext().getAuthentication() == null) {
+            errorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
+            return;
+        }
+
+        filterChain.doFilter(request, response);
+    }
+
+    private void errorResponse(HttpServletResponse response, int code, String message) throws IOException {
+        response.setStatus(code);
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+
+        // Build the JSON response body
+        Map<String, Object> errorDetails = new HashMap<>();
+        errorDetails.put("status", (Object) code);
+        errorDetails.put("message", message);
+
+        objectMapper.writeValue(response.getWriter(), errorDetails);
     }
 }
 ```
