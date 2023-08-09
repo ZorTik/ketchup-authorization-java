@@ -1,0 +1,4 @@
+rootProject.name = 'ketchup-authorization-java'
+include 'authorization-lib'
+include 'authorization-spring'
+
