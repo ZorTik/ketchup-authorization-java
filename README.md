@@ -28,6 +28,9 @@ boolean success = authorizationSession.authorized(); // Check if authorization w
 UserDetails details = authorizationResult.fetchUserDetails(); // Fetch user details
 // Fetch node (permission) state
 boolean nodeState = authorizationResult.fetchNodeState("any.permission.node");
+
+// You can also manually refresh the session
+authorizationSession.refresh();
 ```
 
 ## authorization-spring
