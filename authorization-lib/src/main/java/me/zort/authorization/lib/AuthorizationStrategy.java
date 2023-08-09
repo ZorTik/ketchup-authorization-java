@@ -9,6 +9,7 @@ public interface AuthorizationStrategy {
     @Nullable Token authorize(HttpProcessor processor, @Nullable JsonObject principal);
     @Nullable UserDetails fetchUserDetails(HttpProcessor processor, Token token);
     boolean fetchNodeState(HttpProcessor processor, Token token, String node);
+    boolean verifyToken(HttpProcessor processor, String token);
 
     record Token(String token, long expiresAt) { }
 

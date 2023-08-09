@@ -48,7 +48,19 @@ public final class AuthorizationClient {
         return new Result(strategy, principal, strategy.authorize(processor, principal));
     }
 
-    public class Result {
+    public Result verify(@NotNull String token) {
+        Objects.requireNonNull(token, "Token cannot be null");
+
+        // Token wrapper without expiration that can't be refreshed
+        AuthorizationStrategy.Token tokenInstance = new AuthorizationStrategy.Token(token, -1);
+        if (strategy.verifyToken(processor, token)) {
+            return new Result(strategy, null, tokenInstance);
+        } else {
+            return new Result(strategy, null, null);
+        }
+    }
+
+    public final class Result {
         private final AuthorizationStrategy strategy;
         private final JsonObject principal;
         @Getter
@@ -63,23 +75,31 @@ public final class AuthorizationClient {
         }
 
         public void refresh() {
+            if (principal == null) {
+                throw new RuntimeException("Cannot refresh, session was not initialized with principal");
+            }
             token = strategy.authorize(processor, principal);
         }
 
-        public UserDetails fetchUserDetails() {
+        public UserDetails fetchUserDetails() throws UnauthorizedException {
             return authorizedFetch(() -> strategy.fetchUserDetails(processor, token));
         }
 
-        public boolean fetchNodeState(String node) {
+        public boolean fetchNodeState(String node) throws UnauthorizedException {
             return Boolean.TRUE.equals(authorizedFetch(() -> strategy.fetchNodeState(processor, token, node)));
         }
 
-        private <T> @Nullable T authorizedFetch(Supplier<@Nullable T> supplier) {
+        private <T> @Nullable T authorizedFetch(Supplier<@Nullable T> supplier) throws UnauthorizedException {
             if (!authorized()) {
-                throw new IllegalStateException("Not authorized");
+                throw new UnauthorizedException("Not authorized");
             }
             T tResult = supplier.get();
             if (tResult == null && System.currentTimeMillis() >= token.expiresAt()) {
+                if (principal == null) {
+                    // Principal is null in only case when this result was initialized
+                    // with token only, so there is no was to refresh the session.
+                    throw new UnauthorizedException("Session expired, please obtain another token");
+                }
                 refresh();
                 return authorizedFetch(supplier);
             } else if (tResult == null) {
@@ -91,6 +111,12 @@ public final class AuthorizationClient {
 
         public boolean authorized() {
             return token != null;
+        }
+    }
+
+    public static class UnauthorizedException extends Exception {
+        public UnauthorizedException(String message) {
+            super(message);
         }
     }
 

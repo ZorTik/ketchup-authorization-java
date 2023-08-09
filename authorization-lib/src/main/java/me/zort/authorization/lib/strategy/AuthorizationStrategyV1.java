@@ -27,19 +27,7 @@ public class AuthorizationStrategyV1 implements AuthorizationStrategy {
 
     @Override
     public @Nullable UserDetails fetchUserDetails(HttpProcessor processor, Token token) {
-        return makeCall(
-                processor, token, "/v1/user/details?includePermissions=true", "GET", null,
-                response -> new UserDetails(
-                        response.get("permissionsIncluded").getAsBoolean(),
-                        response.get("permissions").getAsJsonArray().asList().stream()
-                                .map(JsonElement::getAsString)
-                                .toList(),
-                        response.get("uuid").getAsString(),
-                        response.get("primaryGroup").getAsString(),
-                        response.get("username").getAsString()
-                ),
-                null
-        );
+        return fetchUserDetails(processor, token, true);
     }
 
     @Override
@@ -50,6 +38,28 @@ public class AuthorizationStrategyV1 implements AuthorizationStrategy {
                 processor, token, "/v1/user/checknode", "POST", body,
                 response -> response.get("state").getAsBoolean(),
                 false
+        );
+    }
+
+    @Override
+    public boolean verifyToken(HttpProcessor processor, String token) {
+        return fetchUserDetails(processor, new Token(token, System.currentTimeMillis() + 60000), false) != null;
+    }
+
+    private @Nullable UserDetails fetchUserDetails(HttpProcessor processor, Token token, boolean includePermissions) {
+        String path = "/v1/user/details" + (includePermissions ? "?includePermissions=true" : "");
+        return makeCall(
+                processor, token, path, "GET", null,
+                response -> new UserDetails(
+                        response.get("permissionsIncluded").getAsBoolean(),
+                        response.get("permissions").getAsJsonArray().asList().stream()
+                                .map(JsonElement::getAsString)
+                                .toList(),
+                        response.get("uuid").getAsString(),
+                        response.get("primaryGroup").getAsString(),
+                        response.get("username").getAsString()
+                ),
+                null
         );
     }
 
