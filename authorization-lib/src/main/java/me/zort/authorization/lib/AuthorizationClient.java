@@ -12,6 +12,19 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Objects;
 import java.util.function.Supplier;
 
+/**
+ * Authorization client that can be used to authorize users and fetch their details
+ * using the ketchup-authorization-server (JWT).
+ *
+ * <p>Initialization example:
+ * <pre>
+ *     AuthorizationClient client = new AuthorizationClient.Builder()
+ *          .url("Authorization server url")
+ *          .build();
+ * </pre>
+ *
+ * @author ZorTik
+ */
 public final class AuthorizationClient {
 
     private final HttpProcessor processor;
@@ -78,6 +91,12 @@ public final class AuthorizationClient {
             this.token = token;
         }
 
+        /**
+         * Tries to refresh current session.
+         * Please note that you can use this method only if you provided either
+         * principal or refresh token when initializing this session. Otherwise,
+         * this method will throw an exception.
+         */
         public void refresh() {
             boolean refreshed = false;
             if (token.refreshToken() != null) {
@@ -90,7 +109,7 @@ public final class AuthorizationClient {
             if (principal == null) {
                 // There is an option to not specify principal, in that case session was initialized
                 // using token only.
-                throw new RuntimeException("Cannot refresh, session was not initialized with principal");
+                throw new RuntimeException("Cannot refresh, session was not initialized with principal or full token");
             }
             token = strategy.authorize(processor, principal);
         }
