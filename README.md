@@ -14,6 +14,7 @@ AuthorizationClient.Result authorizationResult;
 authorizationResult = client.authorize(); // Authorize as trusted client
 authorizationResult = client.authorize("username", "password"); // Authorize with basic auth
 authorizationResult = client.authorize(principal); // Authorize with custom principal
+authorizationResult = client.verify("token"); // Verify token and inject token (This session can't be refreshed)
 
 boolean success = authorizationResult.authorized(); // Check if authorization was successful
 UserDetails details = authorizationResult.fetchUserDetails(); // Fetch user details
