@@ -25,9 +25,9 @@ authorizationSession = client.verify("token", "refreshToken");
 boolean success = authorizationSession.authorized(); // Check if authorization was successful
 // The session will try to automatically refresh itself using euther provided refresh token
 // or provided principal
-UserDetails details = authorizationResult.fetchUserDetails(); // Fetch user details
+UserDetails details = authorizationSession.fetchUserDetails(); // Fetch user details
 // Fetch node (permission) state
-boolean nodeState = authorizationResult.fetchNodeState("any.permission.node");
+boolean nodeState = authorizationSession.fetchNodeState("any.permission.node");
 
 // You can also manually refresh the session
 authorizationSession.refresh();
