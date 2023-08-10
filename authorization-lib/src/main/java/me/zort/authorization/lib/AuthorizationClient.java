@@ -123,6 +123,14 @@ public final class AuthorizationClient {
         }
     }
 
+    public @NotNull AuthorizationClient.Session refresh(@NotNull String refreshToken) {
+        Objects.requireNonNull(refreshToken, "Refresh token cannot be null");
+
+        Session session = new Session(strategy, null, new AuthorizationStrategy.Token(null, refreshToken, -1));
+        session.refresh();
+        return session;
+    }
+
     /**
      * Authorization session wrapper, authorized or non-authorized.
      * Unauthorized session will return false in {@link Session#authorized()}.
