@@ -1,6 +1,5 @@
 package me.zort.authorization.spring;
 
-import lombok.RequiredArgsConstructor;
 import me.zort.authorization.lib.AuthorizationClient;
 import me.zort.authorization.lib.model.UserDetails;
 import org.jetbrains.annotations.NotNull;

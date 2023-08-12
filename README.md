@@ -5,6 +5,17 @@ This repository contains common client libraries to interact with the ketchup-au
 This module contains plain authorization client to be used anywhere without specialization.
 
 ### Usage
+To begin using the repository, first add it as the dependency to your project:
+```groovy
+repositories {
+    // Jitpack
+    maven { url = 'https://jitpack.io' }
+}
+dependencies {
+    implementation 'com.github.rajce-pro.ketchup-authorization-java:MODULE:TAG'
+}
+```
+
 ```java
 AuthorizationClient client = new AuthorizationClient.Builder()
    .url("http://authorizationserverurl:1234")
