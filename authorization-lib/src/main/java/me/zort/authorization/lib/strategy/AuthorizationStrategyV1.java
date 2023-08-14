@@ -50,7 +50,9 @@ public class AuthorizationStrategyV1 implements AuthorizationStrategy {
 
     @Override
     public boolean verifyToken(HttpProcessor processor, String token) {
-        return doFetchUserDetails(processor, new Token(token, null, System.currentTimeMillis() + 60000), false) != null;
+        return doFetchUserDetails(processor,
+                new Token(token, null, System.currentTimeMillis() + 60000), false
+        ) != null;
     }
 
     private @NotNull Function<JsonObject, Token> tokenMapper() {
@@ -61,7 +63,9 @@ public class AuthorizationStrategyV1 implements AuthorizationStrategy {
         );
     }
 
-    private @Nullable UserDetails doFetchUserDetails(HttpProcessor processor, Token token, boolean includePermissions) {
+    private @Nullable UserDetails doFetchUserDetails(
+            HttpProcessor processor, Token token, boolean includePermissions
+    ) {
         String path = "/v1/user/details" + (includePermissions ? "?includePermissions=true" : "");
         return makeCall(
                 processor, token, path, "GET", null,
@@ -70,12 +74,16 @@ public class AuthorizationStrategyV1 implements AuthorizationStrategy {
                         response.get("permissions").getAsJsonArray().asList().stream()
                                 .map(JsonElement::getAsString)
                                 .toList(),
-                        response.get("uuid").getAsString(),
-                        response.get("primaryGroup").getAsString(),
-                        response.get("username").getAsString()
+                        parseNullableString(response.get("uuid")),
+                        parseNullableString(response.get("primaryGroup")),
+                        parseNullableString(response.get("username"))
                 ),
                 null
         );
+    }
+
+    private static String parseNullableString(JsonElement element) {
+        return element.isJsonNull() ? null : element.getAsString();
     }
 
     private static <T> T makeCall(
