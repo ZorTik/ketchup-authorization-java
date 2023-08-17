@@ -208,17 +208,34 @@ public final class AuthorizationClient {
             }
             T tResult = supplier.get();
             if (tResult == null && System.currentTimeMillis() >= token.expiresAt()) {
-                if (principal == null && !trusted && token.refreshToken() == null) {
-                    // Principal is null in only case when this result was initialized
-                    // with token only, so there is no way to refresh the session.
-                    throw new UnauthorizedException("Session expired, please obtain another token");
-                }
+                requireCanRefresh();
                 refresh();
                 return authorizedFetch(supplier);
             } else if (tResult == null) {
                 throw new IllegalStateException("Token should be valid, but response was not present");
             } else {
                 return tResult;
+            }
+        }
+
+        public String getValidToken() throws UnauthorizedException {
+            if (!authorized()) {
+                throw new UnauthorizedException("Not authorized");
+            }
+            if (System.currentTimeMillis() >= token.expiresAt()) {
+                requireCanRefresh();
+                refresh();
+                return getValidToken();
+            } else {
+                return token.token();
+            }
+        }
+
+        private void requireCanRefresh() throws UnauthorizedException {
+            if (principal == null && !trusted && token.refreshToken() == null) {
+                // Principal is null in only case when this result was initialized
+                // with token only, so there is no way to refresh the session.
+                throw new UnauthorizedException("Session expired, please obtain another token");
             }
         }
 
