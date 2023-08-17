@@ -208,7 +208,7 @@ public final class AuthorizationClient {
             }
             T tResult = supplier.get();
             if (tResult == null && System.currentTimeMillis() >= token.expiresAt()) {
-                if (principal == null && token.refreshToken() == null) {
+                if (principal == null && !trusted && token.refreshToken() == null) {
                     // Principal is null in only case when this result was initialized
                     // with token only, so there is no way to refresh the session.
                     throw new UnauthorizedException("Session expired, please obtain another token");
