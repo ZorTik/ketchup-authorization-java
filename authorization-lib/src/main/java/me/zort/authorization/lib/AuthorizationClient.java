@@ -56,7 +56,7 @@ public final class AuthorizationClient {
      * @return New authorization session
      */
     public @NotNull AuthorizationClient.Session authorize() { // Administrator authorization
-        return authorize((JsonObject) null);
+        return authorize((JsonObject) null).trusted();
     }
 
     /**
@@ -140,6 +140,7 @@ public final class AuthorizationClient {
         private final JsonObject principal;
         @Getter
         private AuthorizationStrategy.Token token;
+        private boolean trusted = false;
 
         private Session(AuthorizationStrategy strategy,
                         @Nullable JsonObject principal,
@@ -164,7 +165,7 @@ public final class AuthorizationClient {
             if (token != null && refreshed) {
                 return;
             }
-            if (principal == null) {
+            if (principal == null && !trusted) {
                 // There is an option to not specify principal, in that case session was initialized
                 // using token only.
                 throw new RuntimeException("Cannot refresh, session was not initialized with principal or full token");
@@ -193,6 +194,11 @@ public final class AuthorizationClient {
          */
         public boolean fetchNodeState(String node) throws UnauthorizedException {
             return Boolean.TRUE.equals(authorizedFetch(() -> strategy.fetchNodeState(processor, token, node)));
+        }
+
+        @NotNull Session trusted() {
+            trusted = true;
+            return this;
         }
 
         // There is no nullable result since all unexpected states result in an exception.
