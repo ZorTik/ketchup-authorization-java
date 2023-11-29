@@ -35,7 +35,7 @@ subprojects {
     publishing {
         publications {
             mavenJava(MavenPublication) {
-                groupId = 'com.github.rajce-pro'
+                groupId = 'me.zort'
                 artifactId = project.name
                 version = '1.0'
 
