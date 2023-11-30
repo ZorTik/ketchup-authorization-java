@@ -12,7 +12,7 @@ repositories {
     maven { url = 'https://jitpack.io' }
 }
 dependencies {
-    implementation 'com.github.rajce-pro.ketchup-authorization-java:MODULE:TAG'
+    implementation 'com.github.ZorTik.ketchup-authorization-java:MODULE:TAG'
 }
 ```
 
